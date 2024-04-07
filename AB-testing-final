@@ -1,0 +1,105 @@
+ANSWER NUMBER 2.
+
+SELECT
+    item_id, 
+    test_a AS test_assignment,
+    CASE WHEN test_a IS NOT NULL THEN 'test_item_1'
+    END AS test_number,
+    CASE WHEN test_a IS NOT NULL THEN CAST('2013-01-05 00:00:00' AS DATE)
+    END AS start_event_date
+    FROM 
+    dsv1069.final_assignments_qa
+    UNION
+    SELECT
+    item_id, 
+    test_a AS test_assignment,
+    CASE WHEN test_b IS NOT NULL THEN 'test_item_2'
+    END AS test_number,
+    CASE WHEN test_b IS NOT NULL THEN CAST('2015-03-14 00:00:00' AS DATE)
+    END AS start_event_date
+    FROM 
+    dsv1069.final_assignments_qa
+    UNION 
+    SELECT
+    item_id, 
+    test_a AS test_assignment,
+    CASE WHEN test_c IS NOT NULL THEN 'test_item_3'
+    END AS test_number,
+    CASE WHEN test_c IS NOT NULL THEN CAST('2016-01-07 00:00:00' AS DATE)
+    END AS start_event_date
+    FROM 
+    dsv1069.final_assignments_qa
+
+
+
+ANSWER NUMBER 3
+
+SELECT 
+test.test_assignment,
+COUNT(test.item_id) AS items,
+SUM(test.order_binary) AS orders
+FROM
+    (SELECT 
+  final_assignments.test_number,
+	final_assignments.test_assignment,
+	final_assignments.item_id,
+	MAX(CASE WHEN (orders.created_at > final_assignments.test_start_date AND
+			DATE_PART('day', created_at - test_start_date) <= 30)
+	THEN  1 ELSE 0 END) AS order_binary
+    FROM 
+    dsv1069.final_assignments
+    LEFT JOIN 
+    dsv1069.orders
+    ON 
+    final_assignments.item_id = orders.item_id
+    WHERE 
+    test_number = 'item_test_2'
+    GROUP BY 
+    final_assignments.item_id, 
+    final_assignments.test_assignment,
+    final_assignments.test_number) test
+    GROUP BY 
+    test.test_assignment
+
+
+
+
+ANSWER NUMBER 4 
+SELECT 
+view_binary.test_assignment,
+Count(view_binary.item_id) AS items,
+SUM(view_binary.view_binary) AS views
+FROM
+(SELECT 
+final_assignments.test_number,
+final_assignments.test_assignment,
+final_assignments.item_id,
+MAX (CASE WHEN (events.event_time > final_assignments.test_start_date
+AND Date_part('day', events.event_time - final_assignments.test_start_date) <= 30) THEN 1 ELSE 0 END) AS view_binary
+FROM 
+dsv1069.final_assignments 
+LEFT JOIN 
+  (SELECT 
+  event_time,
+  CASE WHEN parameter_name = 'item_id' THEN CAST(parameter_value AS NUMERIC) ELSE NULL END AS item_id
+  FROM
+  dsv1069.events) as events
+ON
+final_assignments.item_id = events.item_id
+WHERE 
+test_number = 'item_test_2'
+GROUP BY 
+final_assignments.test_assignment,
+final_assignments.item_id,
+final_assignments.test_number) view_binary
+GROUP BY 
+view_binary.test_assignment
+
+
+
+
+RESULT ANALYSIS
+4. The P value for the results of the View binary is 0.20 that means that the result is not statistically significant and the lift of 2.6% is not meaningful. 
+3. P value is at 0.88. No statistical importance. There is no improvement but a -1% in probability. 
+QA
+1. No we didn't have all the data needed.
